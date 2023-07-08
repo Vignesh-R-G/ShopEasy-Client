@@ -8,63 +8,25 @@ import { useNavigate } from 'react-router-dom'
 import {Loading} from './Loading' 
 import { context } from './Context'
 import Table from 'react-bootstrap/Table'
-import { NavigationBar } from './Navbar';
+import { NavigationBar } from './Navbar'
+import { CartProduct } from './CartProducts'
+import { SelectedProduct } from './SelectedProduct';
 
 export const Cart=()=>{
     const [loading,setLoading]=useState(true)
     const [products,setProducts]=useState([])
     const [totalprice,setTotalPrice]=useState(0)
+    const [selectedprice,setSelectedPrice]=useState(0)
     const [updateflag,setUpdateFlag]=useState(false)
     const [updateqty,setUpdateQty]=useState(0)
-    const [executed,setExecuted]=useState(false)
+    const [lst,setLst]=useState([])
     const cont=useContext(context)
     const navigate=useNavigate()
 
     useEffect(()=>{
         cont.setViewDetails([])
         getproducts()
-    },[executed])
-
-    const getproducts=()=>{
-        axios.get(`/user/cart/viewcart/${cont.useremail}`).then((res)=>{
-            if(res.data.status){
-                setProducts(res.data.msg)
-                gettotalprice(res.data.msg)
-                if(!executed)
-                    updateDefaultState(res.data.msg)
-            }
-            else{
-                toast.error(res.data.msg)
-            }
-            
-        })
-    }
-
-    const removeFromCart=(x)=>{
-        axios.delete(`user/cart/removefromcart/${x.ProductId}/${cont.useremail}`).then((res)=>{
-            if(res.data.status){
-                toast.success('Item removed successfully')
-                console.log(res.data.msg)
-                getproducts()
-            }
-        })
-    }
-
-    const modifyqty=(x)=>{
-        const datas={
-            email:cont.useremail,
-            id:x.ProductId,
-            qty:updateqty
-        }
-        axios.put("/user/cart/modifyqty",datas).then((res)=>{
-            if(res.data.status){
-                toast.success('Cart Updated Successfully')
-                getproducts()
-                setUpdateFlag(false)
-                setUpdateQty(0)
-            }
-        })
-    }
+    },[])
 
     const gettotalprice=(items)=>{
         let total=0
@@ -75,53 +37,60 @@ export const Cart=()=>{
         setLoading(false)
     }
 
-    const changeState=(items)=>{
-        const datas={
-            id:items.ProductId,
-            email:cont.useremail
-        }
-        axios.put("/user/cart/editstate",datas).then((res)=>{
+    const getproducts=()=>{
+        axios.get(`/user/cart/viewcart/${cont.useremail}`).then((res)=>{
             if(res.data.status){
-                console.log('State Changed !')
-                getproducts()
+                setProducts(res.data.msg)
+                gettotalprice(res.data.msg)
             }
-            else
+            else{
                 toast.error(res.data.msg)
-        })
-    }
-
-    const updateDefaultState=(items)=>{
-        items.map((x)=>{
-            const datas={
-                id:x.ProductId,
-                email:cont.useremail
             }
-            axios.put("/user/cart/editstatebeforenavigate",datas).then((res)=>{
-                if(res.data.status){
-                    setExecuted(true)
-                    console.log(res.data.msg)
-                }
-                else
-                    toast.error(res.data.msg)
-            })
         })
     }
 
+    const getselectedprice=(items)=>{
+        let total=0
+        products.map((x)=>{
+            if(items.includes(x.ProductId))
+                total+=(x.Price)*(x.Qty)
+        })
+        setSelectedPrice(total)
+    }
+
+    const updateState=(x)=>{
+        if(lst.includes(x)){
+            const l=lst.filter((y)=>y!=x)
+            setLst(l)
+            getselectedprice(l)
+        }
+        else{
+            const l=lst
+            l.push(x)
+            setLst([...lst,x])
+            getselectedprice(l)
+        }
+    }
+    console.log(lst)
+
+    
     const buy=()=>{
-        const lst = products.filter((x) => x.State===true)
-        cont.setViewDetails(lst)
+        const l = products.filter((x) =>  lst.includes(x.ProductId))
+        cont.setViewDetails(l)
         navigate('/book')
     }
-
     return(
         <div className='container-fluid'>
             {loading?
                 <Loading/>:
                 <div>
                     <NavigationBar/>
+                    <div>
                     <br></br>
                     <br></br>
-                    <h1 className='title'>Cart</h1>
+                    <div className='search'>
+                        <h1 className='title'>Cart</h1>
+                    </div>
                     <br></br>
                     <Table responsive striped bordered hover>
                             <thead>
@@ -136,22 +105,9 @@ export const Cart=()=>{
                                 </tr>
                             </thead>
                             <tbody>
-                            {products.map((x)=>
-                                <tr>
-                                    <td>{x.ProductName}</td>
-                                    <td><img src={x.Image} width="50" height="50"/></td>
-                                    {updateflag?<td><input type="number" id={x.ProductId} className="form-control" onChange={(e)=>setUpdateQty(e.target.value)} placeholder="Enter Quantity"></input>
-                                    <br></br>
-                                    <button className="btn btn-primary" onClick={()=>modifyqty(x)}>Set Qty</button></td>:
-                                    <td>{x.Qty}</td>}
-                                    <td>₹ {x.Price}</td>
-                                    <td>{x.Category}</td>
-                                    <td><input type="checkbox" onChange={()=>changeState(x)}></input></td>
-                                    <td><button className='btn btn-primary' onClick={()=>removeFromCart(x)}>Remove</button>
-                                    
-                                    <button style={{position:"relative",left:"3px"}} onClick={()=>setUpdateFlag(true)} className='btn btn-success'>Edit</button></td>
-                                </tr>
-                            )}
+                                {products.map((y)=>
+                                    <CartProduct x={y} functions={{getproducts,updateState}}/>
+                                )}
                             </tbody>
                         </Table>
                         <br></br>
@@ -161,10 +117,39 @@ export const Cart=()=>{
                                 <th>₹ {totalprice}</th>
                             </thead>
                         </Table>
+                        <br></br>
+                        <div className='search'>
+                            <h4 className='title' style={{color:"green"}}>Selected Products</h4>
+                        </div>
+                        <br></br>
+                        <Table responsive striped bordered hover>
+                            <thead>
+                            <tr>
+                                <th>Product Name</th>
+                                <th>Image</th>
+                                <th>Quantity</th>
+                                <th>Price</th>
+                                <th>Category</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {products.map((y)=>
+                                    lst.includes(y.ProductId)?
+                                    <SelectedProduct x={y} functions={{getproducts,updateState}}/>:""
+                                )}
+                            </tbody>
+                        </Table>
+                        <Table responsive striped bordered hover>
+                            <thead>
+                                <th>Total Price :</th>
+                                <th>₹ {selectedprice}</th>
+                            </thead>
+                        </Table>
                         <div>
                             <center>
-                                <button className='btn btn-success' onClick={buy}>Buy Now</button>
+                                <button className='btn btn-success' onClick={()=>buy()}>Buy Now</button>
                             </center>
+                        </div>
                         </div>
                 </div>}
         </div>

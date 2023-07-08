@@ -1,3 +1,55 @@
 .title{
+    color:blue;
+    text-align: center;
+}
+
+.table_top{
+    border:1px solid rgb(212, 212, 215);
+ }
+ 
+ td{
+     color:blue;
+ }
+ th{
+     color:green;
+ }
+ 
+ table{
+     background-color: white;
+     border-radius: 10px;
+ }
+
+.order{
+    padding:14px;
+    background-color: rgb(237, 239, 240);
+}
+
+.filter_orders{
+    text-align: center;
+}
+
+.filteredorders{
+    text-align: center;
     color:green;
+    padding: 10px;
+    background-color: rgb(235, 250, 206);
+    border-radius: 10px;
+}
+
+.products{
+    background-color: rgb(220, 238, 248);
+    border-radius: 10px;
+    padding: 14px;
+}
+
+.orders{
+    padding:10px;
+    border-radius: 10px;
+    /*background-color: rgb(235, 250, 206);*/
+    background-color: rgb(235, 230, 247);
+}
+
+.title_top{
+    padding:14px;
+    background-color: rgb(237, 239, 240);
 }

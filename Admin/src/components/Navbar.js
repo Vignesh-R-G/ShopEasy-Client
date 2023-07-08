@@ -54,7 +54,7 @@ export const NavigationBar=()=> {
             <Nav.Link>ViewProducts</Nav.Link>
           </LinkContainer>
           <LinkContainer to="/addproduct">
-            <Nav.Link>AddProduct</Nav.Link>
+            <Nav.Link>AddData</Nav.Link>
           </LinkContainer>
           <LinkContainer to="/orders">
             <Nav.Link>Orders</Nav.Link>

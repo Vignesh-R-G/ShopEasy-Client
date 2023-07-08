@@ -7,7 +7,7 @@ import { Product } from './components/Products';
 import { Orders } from './components/Orders';
 import { Delivered } from './components/Delivered';
 import { AddProduct } from './components/AddProduct';
-import { Logout } from './components/Logout';
+import { Logout } from './components/Logout'
 
 
 function App() {

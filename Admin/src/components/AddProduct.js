@@ -21,6 +21,8 @@ export const AddProduct=()=>{
     const [category,setCategory]=useState("")
     const [description,setDescription]=useState("")
     const [discount,setDiscount]=useState(0)
+    const [city,setCity]=useState("")
+    const [pincode,setPincode]=useState(0)
 
     useEffect(()=>{
         if(!localStorage.getItem("shopeasy_token")){
@@ -32,7 +34,7 @@ export const AddProduct=()=>{
 
     const addproduct=(e)=>{
         e.preventDefault()
-        const datas={
+        const data={
             name:name,
             price:price,
             qty:qty,
@@ -41,7 +43,7 @@ export const AddProduct=()=>{
             description:description,
             discount:discount
         }
-        axios.post("/admin/product/addproduct",datas).then((res)=>{
+        axios.post("/admin/product/addproduct",data).then((res)=>{
             if(res.data.status){
                 toast.success("Product Added Successfully !")
             }
@@ -49,6 +51,29 @@ export const AddProduct=()=>{
                 toast.error("Failed to Add the Product !")
             }
         })
+    }
+
+    const addlocation=(e)=>{
+        e.preventDefault()
+        if(pincode.toString().length!=6){
+            toast.warning("Please Enter a valid pincode")
+        }
+        else{
+            const data={
+                pincode:pincode,
+                city:city
+            }
+            axios.post('/admin/pincode/addpincode',data).then((res)=>{
+                if(res.data.status){
+                    toast.success('Location Added Successfully')
+                }
+                else{
+                    toast.error(res.data.msg)
+                }
+                setPincode("")
+                setCity("")
+            })
+        }
     }
 
     return(
@@ -63,9 +88,28 @@ export const AddProduct=()=>{
             <br></br>
             <div className="row">
                     <br></br>
-                    <div className="col-md-4"></div>
-                    <div className="col-md-4">
-                        <h1 className="title" style={{textAlign:"center"}}>Add Product</h1>
+                    <div className='col-md-1'></div>
+                    <div className="col-md-4 products">
+                        <br></br>
+                        <br></br>
+                        <br></br>
+                        <br></br>
+                        <br></br>
+                        <h3 style={{color:"green",textAlign:"center"}}>Add Location</h3>
+                        <form onSubmit={addlocation}>
+                            <label>City :</label>
+                            <input type="text" placeholder="Enter the location" className="form-control" onChange={(e)=>setCity(e.target.value)} value={city} required></input>
+                            <label>Pincode :</label>
+                            <input type="text" placeholder="Enter the six digit pincode" className='form-control' onChange={(e)=>setPincode(e.target.value)} value={pincode} required></input>
+                            <br></br>
+                            <center>
+                                <button type="submit" className='btn btn-success'>Add Location</button>
+                            </center>
+                        </form>
+                    </div>
+                    <div className='col-md-2'></div>
+                    <div className="col-md-4 products">
+                        <h3 style={{textAlign:"center",color:"green"}}>Add Product</h3>
                         <form onSubmit={addproduct}>
                             <div className='form-group'>
                                 <label>Product Name :</label>
@@ -98,10 +142,12 @@ export const AddProduct=()=>{
                                     <option>Air Conditioners</option>
                                 </select>
                                 <label>Discount :</label>
-                                <input type="number" placeholder="Enter If Available" value={discount} className='form-control' onChange={(e)=>setDiscount(e.target.value)}/>
+                                <input type="number" placeholder="Enter Discount" value={discount} className='form-control' onChange={(e)=>setDiscount(e.target.value)} required/>
                             </div>
                             <br></br>
-                            <button className='btn btn-success' type="submit">Add Product</button>
+                            <center>
+                                <button className='btn btn-success' type="submit">Add Product</button>
+                            </center>
                             <br></br>
                         </form>
                     </div>

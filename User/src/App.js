@@ -8,7 +8,8 @@ import { Cart } from './components/Cart';
 import { Logout } from './components/Logout';
 import { Home } from './components/Home';
 import { View } from './components/View';
-import { Booking } from './components/Booking';
+import { Booking } from './components/Booking'
+import {Myorders} from './components/Myorders'
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route path="/logout" element={<Logout/>}></Route>
           <Route path="/view" element={<View/>}></Route>
           <Route path="/book" element={<Booking/>}></Route>
+          <Route path="/myorders" element={<Myorders/>}></Route>
         </Routes>
       </Context>
     </div>

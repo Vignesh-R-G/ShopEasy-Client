@@ -13,6 +13,13 @@ import { UnAuthorized } from './UnAuthorized';
 export const Orders=()=>{
     const [loading,setLoading]=useState(true)
     const [orders,setOrders]=useState([])
+    const [date,setDate]=useState("")
+    const [citylst,setCityLst]=useState([])
+    const [addressinfo,setAddressInfo]=useState([])
+    const [pincode,setPincode]=useState("")
+    const [address,setAddress]=useState("")
+    const [filterorders,setFilterOrders]=useState([])
+    const cont=useContext(context)
     const navigate=useNavigate()
 
     useEffect(()=>{
@@ -23,7 +30,9 @@ export const Orders=()=>{
             },3000)
         }
         else{
+            cont.setViewDate('')
             getdistinctorders()
+            getcities()
         }
     },[])
 
@@ -33,6 +42,24 @@ export const Orders=()=>{
                 ordersmap(res.data.msg)
             }
         })
+    }
+
+    const getcities=()=>{
+        axios.get("/admin/pincode/getpincode").then((res)=>{
+            if(res.data.status){
+                setAddressInfo(res.data.msg)
+                cityinfo(res.data.msg)
+            }
+        })
+    }
+
+    const cityinfo=(info)=>{
+        const lst1=[]
+        for(const x of info){
+            if(!lst1.includes(x.City))
+                lst1.push(x.City)
+        }
+        setCityLst(lst1)
     }
 
     const ordersmap = async (distinctIds) => {
@@ -45,17 +72,18 @@ export const Orders=()=>{
                 allOrders.push(res.data.msg)
           }
         }
-        setLoading(false);
-        setOrders(allOrders);
+        setLoading(false)
+        setOrders(allOrders)
+        setFilterOrders(allOrders)
     }
 
     const makeprogress=(id)=>{
         setLoading(true)
-        const datas={
+        const data={
             orderid:id,
             orderstatus:"In Progress"
         }
-        axios.put("/user/delivery/updatestatus",datas).then(()=>{
+        axios.put("/user/delivery/updatestatus",data).then(()=>{
             toast.success("Status Changed Successfully")
             getdistinctorders()
             
@@ -64,18 +92,90 @@ export const Orders=()=>{
 
     const makedelivered=(id)=>{
         setLoading(true)
-        const datas={
+        const data={
             orderid:id,
             orderstatus:"Delivered"
         }
-        axios.put("/user/delivery/updatestatus",datas).then(()=>{
+        axios.put("/user/delivery/updatestatus",data).then(()=>{
             toast.success("Status Changed Successfully")
             getdistinctorders()
             setLoading(false)
         })
     }
-
      
+    const filter=(date,pincode,address)=>{
+        
+        if(date==="" && pincode==="" && address===""){
+            setFilterOrders(orders)
+        }
+        else{
+            if(date!=="" && pincode==="" && address===""){
+                const lst=[]
+                orders.map((x)=>{
+                    if(x[0].OrderedDate===date){
+                        lst.push(x)
+                    }
+                })
+                setFilterOrders(lst)
+            }
+            else if(date!=="" && pincode!=="" && address===""){
+                const lst=[]
+                orders.map((x)=>{
+                    if(x[0].OrderedDate===date && x[0].Pincode===pincode){
+                        lst.push(x)
+                    }
+                })
+                setFilterOrders(lst)
+            }
+            else if(date!=="" && pincode!=="" && address!==""){
+                const lst=[]
+                orders.map((x)=>{
+                    if(x[0].OrderedDate===date && x[0].Pincode===pincode && x[0].Address==address){
+                        lst.push(x)
+                    }
+                })
+                setFilterOrders(lst)
+            }
+            else if(date==="" && pincode!=="" && address!==""){
+                const lst=[]
+                orders.map((x)=>{
+                    if(x[0].Pincode===pincode && x[0].Address===address){
+                        lst.push(x)
+                    }
+                })
+                setFilterOrders(lst)
+            }
+            else if(date!=="" && pincode==="" && address!==""){
+                const lst=[]
+                orders.map((x)=>{
+                    if(x[0].OrderedDate===date && x[0].Address===address){
+                        lst.push(x)
+                    }
+                })
+                setFilterOrders(lst)
+            }
+            else if(date==="" && pincode==="" && address!==""){
+                const lst=[]
+                orders.map((x)=>{
+                    if(x[0].Address===address){
+                        lst.push(x)
+                    }
+                })
+                setFilterOrders(lst)
+            }
+            else if(date==="" && pincode!=="" && address===""){
+                const lst=[]
+                orders.map((x)=>{
+                    if(x[0].Pincode===pincode){
+                        lst.push(x)
+                    }
+                })
+                setFilterOrders(lst)
+            }
+
+        }
+    }
+
     return(
         <div className="container-fluid">
             {loading?
@@ -85,12 +185,48 @@ export const Orders=()=>{
                     {localStorage.getItem("shopeasy_token")?<div>
                     <br></br>
                     <br></br>
-                    <h1 className="title" style={{textAlign:"center"}}>Orders</h1>
                     <br></br>
                     <div>
                         {orders.length==0?<h3 style={{textAlign:"center"}}>No Orders Found</h3>:<div>
-                        {orders.map((x,index)=>
+                        
+                        <div className='row'>
+                            <div className='col-md-4'></div>
+                            <div className='col-md-4 orders'>
+                                <h3 className='title'>Filter Orders</h3>
+                                <label>Date :</label>
+                                <input type="date" onChange={(e)=>{setDate(e.target.value);filter(e.target.value,pincode,address)}} placeholder="Enter the date" className='form-control'></input>
+                                <br></br>
+                                <label>City :</label>
+                                <select onChange={(e)=>{setAddress(e.target.value);filter(date,pincode,e.target.value)}} className='form-control'>
+                                    <option value="">Choose City</option>
+                                    {citylst.map((x)=>
+                                        <option value={x}>{x}</option>
+                                    )}
+                                </select>
+                                <br></br>
+                                <label>Pincode :</label>
+                                <select onChange={(e)=>{setPincode(e.target.value);filter(date,e.target.value,address)}} className='form-control'>
+                                        <option value="">Choose Pincode</option>
+                                        {addressinfo.map((x)=>
+                                            <option value={x.Pincode}>{x.Pincode}</option>
+                                        )}
+                                </select>
+                                <br></br>
+                            </div>
+                            <div className='col-md-4'></div>
+                        </div>
+                        
+                        <br></br>
+                        <br></br>
+                        {filterorders.map((x,index)=>
                             <div>
+                            <div style={{borderRadius:"5px",padding:"10px"}} className='table_top'>
+                            <div className='order'>
+                                <center>
+                                    <p>User Ordered Date:{x[0].OrderedDate}</p>
+                                </center>
+                            </div>
+                            <br></br>
                             <Table responsive striped bordered hover>
                                 <thead>
                                     <tr>
@@ -98,64 +234,62 @@ export const Orders=()=>{
                                         <th>MobileNo</th>
                                         <th>Address</th>
                                         <th>Pincode</th>
-                                        <th>Ordered Date</th>
                                     </tr>
                                     <tr>
-                                        <th>{x[0].Name}</th>
-                                        <th>{x[0].MobileNumber}</th>
-                                        <th>{x[0].Address}</th>
-                                        <th>{x[0].Pincode}</th>
-                                        <th>{x[0].OrderedDate.slice(0,10)}</th>
+                                        <td>{x[0].Name}</td>
+                                        <td>{x[0].MobileNumber}</td>
+                                        <td>{x[0].Address}</td>
+                                        <td>{x[0].Pincode}</td>
                                     </tr>
                                 </thead>
                             </Table>
-                            <br></br>
                             <div>
                                 <Table responsive striped bordered hover>
                                 <thead>
-                                    <tr>
-                                        <th>Product Name</th>
-                                        <th>Image</th>
-                                        <th>Quantity</th>
-                                        <th>Price</th>
-                                    </tr>
+                                    {x.map((items,index)=>
+                                        (index===x.length-1)?"":
+                                        <tr>
+                                            <th>Product Name</th>
+                                            <td>{items.ProductName}</td>
+                                            <th>Quantity</th>
+                                            <td>{items.Qty}</td>
+                                            <th>Price (Per Qty)</th>
+                                            <td>₹ {items.Price}</td>
+                                        </tr>
+                                    )}
                                 </thead>
-                                <tbody>
-                                {x.map((items,index)=>
-                                    (index===x.length-1)?"":
-                                    <tr>
-                                        <td>{items.ProductName}</td>
-                                        <td><img src={items.Image} width="40" height="40"/></td>
-                                        <td>{items.Qty}</td>
-                                        <td>₹ {items.Price}</td>
-                                    </tr>
-                                )}
-                                </tbody>
                                 </Table>
                             </div>
                             <Table responsive striped bordered hover>
                                 <thead>
                                     <tr>
                                         <th>Total Price</th>
+                                        <td>₹ {x[x.length-1]}</td>
                                         <th>Status</th>
+                                        <td>{x[0].Status}</td>
                                         <th>Action</th>
+                                        <th>
+                                            {x[0].Status==="Not Viewed"?
+                                            <button className="btn btn-primary" onClick={()=>makeprogress(x[0].OrderId)}>Mark as Progress</button>:
+                                            <button className="btn btn-primary" disabled onClick={()=>makeprogress(x[0].OrderId)}>Mark as Progress</button>}
+                                        </th>
+                                        <th>
+                                            {x[0].Status==="In Progress"?
+                                            <button className="btn btn-success" onClick={()=>makedelivered(x[0].OrderId)}>Mark as Delivered</button>:
+                                            <button className="btn btn-success" disabled onClick={()=>makedelivered(x[0].OrderId)}>Mark as Delivered</button>}
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td>₹ {x[x.length-1]}</td>
-                                        <td>{x[0].Status}</td>
-                                        <td>
-                                            <button className="btn btn-primary" onClick={()=>makeprogress(x[0].OrderId)}>Mark as Progress</button>
-                                            <button className="btn btn-success" style={{position:"relative",left:"4px"}} onClick={()=>makedelivered(x[0].OrderId)}>Mark as Delivered</button>
-                                        </td>
+                                        
                                     </tr>
                                 </tbody>
                             </Table>
                             
+                            </div>
                             <br></br>
                             <br></br>
-                            
                             </div>
                             
                         )}

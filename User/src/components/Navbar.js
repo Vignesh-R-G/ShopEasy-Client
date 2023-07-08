@@ -56,6 +56,9 @@ export const NavigationBar=()=> {
           <LinkContainer to="/Cart">
             <Nav.Link>Cart</Nav.Link>
           </LinkContainer>
+          <LinkContainer to="/myorders">
+            <Nav.Link>Myorders</Nav.Link>
+          </LinkContainer>
           </Nav>
           
           <div className="d-flex gap-3">

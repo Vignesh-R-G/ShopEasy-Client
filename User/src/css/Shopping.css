@@ -1,23 +1,13 @@
 .card img:hover{
-    transform: scale(0.9);
     cursor: pointer;
 }
 
-.card img{
-    transition:all 2s ease-in-out;
-}
-
 .title{
-    color:green;
+    color:blueviolet;
     text-align: center;
 }
 
-.image{
-    transition:all 2s ease-in-out;
-}
-
 .image:hover{
-    transform: scale(0.9);
     cursor: pointer;
 }
 
@@ -25,4 +15,44 @@
     position:relative;
     left:100px;
     width: 70px;
+}
+
+.table_top{
+   border:1px solid rgb(212, 212, 215);
+}
+
+td{
+    color:blue;
+}
+th{
+    color:green;
+}
+
+table{
+    background-color: white;
+    border-radius: 10px;
+}
+
+.orders{
+    padding:10px;
+    border-radius: 10px;
+    /*background-color: rgb(235, 250, 206);*/
+    background-color: rgb(235, 230, 247);
+}
+
+.search{
+    margin:2px;
+    background-color: rgb(235, 230, 247);
+    padding:14px;
+}
+
+.order{
+    padding:14px;
+    background-color: rgb(237, 239, 240);
+}
+
+.views{
+    padding:14px;
+    background-color:rgb(196, 255, 236);
+    border-radius: 5px;
 }

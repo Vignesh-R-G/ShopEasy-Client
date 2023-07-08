@@ -8,12 +8,17 @@ import { useNavigate } from 'react-router-dom'
 import {Loading} from './Loading'
 import { context } from './Context'; 
 import '../css/Shopping.css'
-import { NavigationBar } from './Navbar';
+import { NavigationBar } from './Navbar'
+import { Products } from './Products';
+import {Carouselimage} from './Carousel'
 
 export const Shopping=()=>{
     const [loading,setLoading]=useState(true)
     const [products,setProducts]=useState([])
     const [qty,setQty]=useState(0)
+    const [chosencategory,setChosenCategory]=useState("")
+    const [filter,setFilter]=useState([])
+    const [search,setSearch]=useState("")
     const navigate=useNavigate()
     const cont=useContext(context)
 
@@ -22,6 +27,7 @@ export const Shopping=()=>{
         axios.get("/admin/product/getallproducts").then((res)=>{
             if(res.data.status){
                 setProducts(res.data.msg)
+                setFilter(res.data.msg)
             }
             else{
                 toast.error(res.data.msg)
@@ -29,48 +35,55 @@ export const Shopping=()=>{
             setLoading(false)
         })
     },[])
-    console.log(cont.useremail)
-    const addtocart=(x)=>{
-        const datas={
-            email:cont.useremail,
-            productid:x._id,
-            productname:x.Name,
-            image:x.Image,
-            price:x.Price,
-            category:x.Category,
-            qty:qty,
+
+    const modifycategory=(e)=>{
+        console.log(e.target.value)
+        setChosenCategory(e.target.value)
+        if(e.target.value==="")
+            filters(e.target.value,search)
+    }
+
+    const filters=(category,searchtext)=>{
+        console.log(category)
+        if(searchtext==="" && category===""){
+            setFilter(products)
         }
-        axios.post("/user/cart/addtocart",datas).then((res)=>{
-            if(res.data.status){
-                toast.success("Item Added to Cart Successfully !")
-                setQty(0)
+        else{
+            const lst=[]
+            if(searchtext!=="" && category===""){
+                products.map((x)=>{
+                    console.log(x.Name)
+                    if(x.Name.toLowerCase().includes(searchtext.toLowerCase())){
+                        lst.push(x)
+                    }
+                })
+            }
+            else if(searchtext==="" && category!==""){
+                products.map((x)=>{
+                    console.log(x.Name)
+                    if(x.Category===category){
+                        lst.push(x)
+                    }
+                })
             }
             else{
-                toast.error(res.data.msg)
+                products.map((x)=>{
+                    console.log(x.Name)
+                    if(x.Category===category && x.Name.toLowerCase().includes(searchtext.toLowerCase())){
+                        lst.push(x)
+                    }
+                }) 
             }
-        })
-    }
-    
-    const view=(x)=>{
-        cont.setViewDetails([...cont.viewdetails,x])
-        navigate("/view")
-    }
-
-    const book=(x)=>{
-        const datas={
-            ProductName:x.Name,
-            ProductId:x._id,
-            Qty:qty,
-            Price:x.Price,
-            Image:x.Image,
-            Category:x.Category
+            setFilter(lst)
         }
-        cont.setViewDetails([...cont.viewdetails,datas])
-        navigate("/book")
     }
 
-    console.log(products)
-    console.log(qty)
+    const modifyinput=(e)=>{
+        setSearch(e.target.value)
+        if(e.target.value==="")
+            filters(chosencategory,e.target.value)
+    }
+
     return(
         <div className='container-fluid'>
             {loading?
@@ -79,30 +92,30 @@ export const Shopping=()=>{
                     <NavigationBar/>
                     <br></br>
                     <br></br>
-                    <h1 className='title'>Shop Easy</h1>
+                    <br></br>
+                    <div className='row search'>
+                        <div className='col-md-2'></div>
+                        <div className='col-md-2'>
+                            <select className="form-control" value={chosencategory} onChange={modifycategory}> 
+                                <option value="">Choose Category</option>
+                                <option value="Mobiles">Mobiles</option>
+                                <option value="Laptops">Laptops</option>
+                                <option value="Gadgets">Gadgets</option>
+                                <option value="Television">Television</option>
+                                <option value="Air Conditioners">Air Conditioners</option>
+                            </select>
+                        </div>
+                        <div className='col-md-4'>
+                        <input type="text" placeholder="Enter the product name to filter" className='form-control'  onChange={modifyinput}></input>
+                        </div>
+                        <div className='col-md-4'>
+                            <button onClick={()=>filters(chosencategory,search)} className='btn btn-success'>Filter Products</button>
+                        </div>
+                    </div>
                     <br></br>
                     <div className="row">
-                        {products.map((x)=>
-                            <div className="col-md-3">
-                                <div className="card" style={{width:"300px"}}>
-                                {x.Discount!=0?<button className="btn btn-success">Available at {x.Discount} % OFFER</button>:<button className="btn btn-success">No Offers Available</button>}
-                                <img src={x.Image} height="300" class="card-img-top" alt="Products"/>
-                                <hr></hr>
-                                <div className="card-body text-center">
-                                    <h5 className="card-title">{x.Name}</h5>
-                                    <h5 className="card-title">₹ {x.Price}</h5>
-                                    <p className="card-text">Available Qty: {x.Available_Qty}</p>
-                                    <button className="btn btn-danger" onClick={()=>view(x)}>View Product</button>
-                                    <br></br>
-                                    <br></br>
-                                    <input type="number" id={x._id} onChange={(e)=>setQty(e.target.value)} placeholder="Qty:" className="form-control inputfield"/>
-                                    <br></br>
-                                    <button className="btn btn-primary" onClick={()=>{book(x)}}>Buy Now</button>
-                                    <button className="btn btn-success" onClick={()=>{addtocart(x)}} style={{position:"relative",left:"3px"}}>Add to Cart</button>
-                                </div>
-                                </div>
-                            </div>
-                            
+                        {filter.map((y)=>
+                            <Products x={y}/>
                         )}
                     </div>
                 </div>

@@ -20,16 +20,77 @@ export const Booking=()=>{
     const [address,setAddress]=useState("")
     const [pincode,setPincode]=useState("")
     const [totalprice,setTotalPrice]=useState(0)
+    const [addressinfo,setAddressInfo]=useState("")
+    const [citylst,setCityLst]=useState([])
+    const [pincodeflag,setPincodeFlag]=useState(false)
     
     const viewproduct=cont.viewdetails
 
     useEffect(()=>{
         gettotalprice()
+        getcities()
     },[])
 
-    
+    const getcities=()=>{
+        axios.get("/admin/pincode/getpincode").then((res)=>{
+            if(res.data.status){
+                setAddressInfo(res.data.msg)
+                cityinfo(res.data.msg)
+            }
+        })
+    }
 
-    const deliver=(orderid)=>{
+    const cityinfo=(info)=>{
+        const lst1=[]
+        for(const x of info){
+            if(!lst1.includes(x.City))
+                lst1.push(x.City)
+        }
+        setCityLst(lst1)
+        setLoading(false)
+    }
+
+    console.log(citylst)
+    
+    const payment=()=>{
+        var options={
+            key:"rzp_test_NbsiaD51zVYHcz",
+            key_secret:"pIGyzXeMV5SV8zh5wjFtPdAv",
+            amount:totalprice*100,
+            currency:"INR",
+            name:"Shop Easy",
+            description:"For ordering the products",
+            handler:function(response){
+                console.log(response.razorpay_payment_id)
+                editqty(response.razorpay_payment_id)
+            },
+            prefill:{
+                name:cont.username,
+                email:cont.useremail
+            },
+            theme:{
+                color:"blue"
+            }
+        }
+        var pay=new window.Razorpay(options)
+        pay.open()
+    }
+
+    const addPaymentDetails=(orderid,paymentid)=>{
+        const data={
+            paymentid:paymentid,
+            orderid:orderid,
+            amount:totalprice
+        }
+        axios.post('/admin/payment/addpaymentdetail',data).then((res)=>{
+            if(res.data.status)
+                toast.success('Order Placed Successfully')
+            else    
+                toast.error('Error occured in adding the payment details')
+        })
+    }
+
+    const deliver=(orderid,paymentid)=>{
         const deliverydata={
             name:name,
             email:cont.useremail,
@@ -40,13 +101,13 @@ export const Booking=()=>{
         }
         axios.post("/user/delivery/deliverydetails",deliverydata).then((res)=>{
             if(res.data.status)
-                toast.success('Order Placed Successfully')
+                addPaymentDetails(orderid,paymentid)
             else
                 toast.error('Internal Server Error !Try after some time')
         })
     }
 
-    const placeorder=()=>{
+    const placeorder=(paymentid)=>{
         const lst=[]
         console.log(viewproduct)
         viewproduct.map((x)=>{
@@ -64,44 +125,48 @@ export const Booking=()=>{
         console.log(lst)
         axios.post('/user/order/placeorder',lst).then((res)=>{
             if(res.data.status)
-                deliver(res.data.msg)
-            else    
-                toast.error('Internal Server Error')
+                deliver(res.data.msg,paymentid)
+            else
+                toast.error(res.data.msg)
         })
     }
 
-    const editqty=()=>{
+    const editqty=(paymentid)=>{
+        let flag=true
         viewproduct.map((x)=>{
-            const datas={
+            const data={
                 id:x.ProductId,
                 ordered_qty:x.Qty
             }
-            axios.put("/admin/product/autoedit",datas).then((res)=>{
-                if(res.data.status)
-                    placeorder()
+            axios.put("/admin/product/autoedit",data).then((res)=>{
+                if(res.data.status){
+                    flag=false
+                }
                 else
                     toast.error(res.data.msg)
             })
         })
+        if(flag)
+            placeorder(paymentid)
     }
 
     const checkqty=(e)=>{
         e.preventDefault()
         let checkflag=true
         viewproduct.map((x)=>{
-            const datas={
+            const data={
                 id:x.ProductId,
                 ordered_qty:x.Qty
             }
-            axios.post("/user/order/checkqty",datas).then((res)=>{
+            axios.post("/user/order/checkqty",data).then((res)=>{
                 if(!res.data.msg)
                     checkflag=false
             })
         })
         if(checkflag)
-            editqty()
+            payment()
         else
-            toast.error('Please reduce teh quantity ! Order Failed')
+            toast.warning('Please reduce teh quantity ! Order Failed')
     }
 
     const gettotalprice=()=>{
@@ -110,20 +175,22 @@ export const Booking=()=>{
             total+=(x.Price)*(x.Qty)
         })
         setTotalPrice(total)
-        setLoading(false)
     }
 
     console.log(viewproduct)
 
     return(
-        <div className='container container-fluid'>
+        <div className='container-fluid'>
             {loading?
                 <Loading/>:
                 <div>
                     <NavigationBar/>
+                    <div>
                     <br></br>
                     <br></br>
-                    <h1 className='title'>Order</h1>
+                    <div className='search'>
+                        <h3 className='title'>Order Details</h3>
+                    </div>
                     <br></br>
                     <div>
                             
@@ -156,9 +223,11 @@ export const Booking=()=>{
                                 <th>₹ {totalprice}</th>
                             </thead>
                         </Table>
-                            
+                        <br></br>
+                        <br></br>
                         </div>
-                        <h1 className='title'>Delivery Details</h1>
+                        <div className='orders'>
+                        <h3 className='title' style={{color:"green"}}>Delivery Details</h3>
                         <div className='row'>
                             <div className='col-md-2'></div>
                             <div className='col-md-8'>
@@ -174,24 +243,39 @@ export const Booking=()=>{
                                 </div>
                                 <br></br>
                                 <div className="form-group">
-                                    <label>Address :</label>
-                                    <input type="text" value={address} onChange={(e)=>setAddress(e.target.value)} className="form-control" required></input>
+                                    <label>Choose City :</label>
+                                    <select value={address} onChange={(e)=>{setAddress(e.target.value);if(e.target.value!==""){setPincodeFlag(true)}else{setPincodeFlag(false)}}} className="form-control" required>
+                                        <option value="">Choose City</option>
+                                        {citylst.map((x)=>
+                                            <option value={x}>{x}</option>
+                                        )}
+                                    </select>
+
                                 </div>
                                 <br></br>
+                                {pincodeflag?
                                 <div className="form-group">
                                     <label>Pincode :</label>
-                                    <input type="text" value={pincode} onChange={(e)=>setPincode(e.target.value)} className="form-control" required></input>
-                                </div>
+                                    <select value={pincode} onChange={(e)=>setPincode(e.target.value)} className="form-control" required>
+                                        <option value="">Choose Pincode</option>
+                                        {addressinfo.map((x)=>
+                                            (x.City===address)?
+                                            <option value={x.Pincode}>{x.Pincode}</option>:""
+                                        )}
+                                    </select>
+                                </div>:""}
                                 <br></br>
                                 <div>
                                     <center>
-                                    <button type="submit" className="btn btn-primary">Place Order</button>
+                                    <button type="submit" className="btn btn-primary">Pay ₹ {totalprice}</button>
                                     </center>
                                     <br></br>
                                 </div> 
                                 </form>
                             </div>
                         </div>
+                        </div>
+                </div>
                 </div>
             }
         </div>
